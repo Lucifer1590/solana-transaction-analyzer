@@ -22,16 +22,23 @@ jobs:
         with:
           python-version: '3.9'  # Using Python 3.9
 
-      - name: Install dependencies
+      - name: Install dependencies on Ubuntu
+        if: runner.os == 'Linux'
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
+      - name: Install dependencies on Windows
+        if: runner.os == 'Windows'
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          if (Test-Path requirements.txt) {pip install -r requirements.txt}
+
       - name: Build binary
         run: |
           pyinstaller --onefile transaction_analysis.py
-        shell: bash
 
       - name: Upload binary as artifact
         uses: actions/upload-artifact@v3
