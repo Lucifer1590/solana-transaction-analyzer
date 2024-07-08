@@ -43,22 +43,26 @@ jobs:
       - name: Upload binary as artifact
         uses: actions/upload-artifact@v3
         with:
-          name: binary-${{ runner.os }}
-          path: dist/
-
+          name: ${{ runner.os }}-binary
+          path: dist/transaction_analysis*
+  
   release:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Download binaries
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download Linux binary
         uses: actions/download-artifact@v3
         with:
-          name: binary-ubuntu-latest
+          name: ubuntu-latest-binary
           path: binaries/linux
-      - name: Download binaries (Windows)
+
+      - name: Download Windows binary
         uses: actions/download-artifact@v3
         with:
-          name: binary-windows-latest
+          name: windows-latest-binary
           path: binaries/windows
 
       - name: Create Release
