@@ -55,7 +55,7 @@ jobs:
     - name: Download artifacts
       uses: actions/download-artifact@v2
 
-    - name: Create Release
+    - name: Create Release and Upload Assets
       uses: actions/github-script@v6
       with:
         github-token: ${{secrets.GITHUB_TOKEN}}
@@ -63,43 +63,34 @@ jobs:
           const fs = require('fs').promises;
           const { repo: { owner, repo }, sha } = context;
           
+          // Determine release name and tag
+          const isTagPush = context.ref.startsWith('refs/tags/');
+          const tagName = isTagPush ? context.ref.replace('refs/tags/', '') : `release-${sha.slice(0, 7)}`;
+          const releaseName = context.payload.inputs ? context.payload.inputs.release_name : `Release ${tagName}`;
+          
+          // Create release
           const release = await github.rest.repos.createRelease({
             owner,
             repo,
-            tag_name: context.ref.startsWith('refs/tags/') ? context.ref.replace('refs/tags/', '') : `release-${sha.slice(0, 7)}`,
-            name: context.payload.inputs ? context.payload.inputs.release_name : `Release ${context.ref.replace('refs/tags/', '')}`,
+            tag_name: tagName,
+            name: releaseName,
             draft: false,
             prerelease: false
           });
           
+          // Upload assets
           const assets = ['transaction_analysis_linux', 'transaction_analysis_windows.exe'];
           for (const asset of assets) {
-            const file = await fs.readFile(`./${asset}/${asset}`);
+            const filePath = `./${asset}/${asset}`;
+            const fileContent = await fs.readFile(filePath);
             await github.rest.repos.uploadReleaseAsset({
               owner,
               repo,
               release_id: release.data.id,
               name: asset,
-              data: file
+              data: fileContent
             });
+            console.log(`Uploaded ${asset} to release ${release.data.id}`);
           }
-
-    - name: Upload Release Assets (Linux)
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./transaction_analysis_linux/transaction_analysis_linux
-        asset_name: transaction_analysis_linux
-        asset_content_type: application/octet-stream
-
-    - name: Upload Release Assets (Windows)
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./transaction_analysis_windows.exe/transaction_analysis_windows.exe
-        asset_name: transaction_analysis_windows.exe
-        asset_content_type: application/octet-stream
+          
+          console.log(`Created release ${release.data.id} with name "${releaseName}" and tag "${tagName}"`);
