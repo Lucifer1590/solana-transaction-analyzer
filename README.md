@@ -1,5 +1,5 @@
 ### **PLEASE CONSIDER DONATING (SOL)- uGGim2n46EhwfU5X6eUB6rWQCmm3zJdpmLG7ZbHuisS**
-
+[Shyft API](https://shyft.to/) - USE CODE `JTSFBI0D` TO GET 10% OFF ON THEIR BILLING PLANS 
 # Solana Transaction Analyzer
 
 This Python script analyzes transactions for a given Solana account, providing statistics on transaction memos and their success rates.
