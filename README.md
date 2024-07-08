@@ -124,7 +124,7 @@ Contributions, issues, and feature requests are welcome. Feel free to check [iss
 ## Author
 
 Lucifer1590 - [Testingguy](https://github.com/Lucifer1590)
-
+contact Discord - testingguy2
 ## Acknowledgments
 
 - [Shyft API](https://shyft.to/) for providing transaction data
