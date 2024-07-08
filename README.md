@@ -49,12 +49,25 @@ Analyzing 1525 transactions...
 | 4 (jito)   |     529 |       529 |      0 | 100.00%     | 0.00%    |
 +-------------+---------+-----------+--------+-------------+----------+
 ```
-## Prerequisites
-
-- Python 3.7 or higher
-- pip (Python package installer)
-
 ## Installation
+
+You have two options to install and run the Solana Transaction Analyzer:
+
+### 1. Using Pre-built Binary (Recommended for most users)
+
+1. Go to the [Releases page](https://github.com/Lucifer1590/solana-transaction-analyzer/releases) of the project.
+2. Download the latest release for your operating system:
+   - For Windows: Download `transaction_analysis_windows.exe`
+   - For Linux: Download `transaction_analysis_linux`
+3. Make the file executable (Linux only):
+   ```
+   chmod +x transaction_analysis_linux
+   ```
+4. Run the executable:
+   - Windows:  `transaction_analysis_windows.exe` or run it from the command prompt
+   - Linux: `./transaction_analysis_linux`
+make sure the .env file is in same folder 
+### 2. Manual Installation (For developers or advanced users)
 
 1. Clone this repository:
    ```
@@ -65,6 +78,37 @@ Analyzing 1525 transactions...
 2. Install the required dependencies:
    ```
    pip3 install requests pandas python-dotenv tabulate
+   ```
+
+3. Run the script using Python 3:
+   ```
+   python3 transaction_analysis.py
+   ```
+
+## Configuration
+
+After installation, follow these steps to configure the analyzer:
+
+1. Create a `.env` file in the root directory of the project with the following content:
+   (or edit the provided one from env.example to .env)
+
+   ```
+   #DONT CHANGE THIS
+   API_URL=https://api.shyft.to/sol/v1/transaction/history
+   #THIS TOO 
+   NETWORK=mainnet-beta
+   #KEEPING THIS BLANK THE SCRIPT WILL ASK YOU FOR ACCOUNT EVERYTIME ITS RUN
+   ACCOUNT=
+   #YOUR SHYFT.IO API KEY
+   API_KEY=your_api_key_here
+   #FOR ADDITIONAL DEBUGGING
+   DEBUG=false
+   ```
+
+2. Replace `your_api_key_here` with your actual Shyft API key.
+3. Optionally, set an account address in the `ACCOUNT` field, or leave it blank to be prompted for it when running the script.
+
+Note: If you're using the pre-built binary, make sure to place the `.env` file in the same directory as the executable.
    ```
 
 ## Configuration
