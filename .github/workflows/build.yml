@@ -36,9 +36,52 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pyinstaller
+        pip install requests pandas python-dotenv tabulate
+        pip freeze > requirements.txt
+
+    - name: Create spec file
+      run: |
+        echo "# -*- mode: python ; coding: utf-8 -*-
+
+        block_cipher = None
+
+        a = Analysis(['transaction_analysis.py'],
+                     pathex=['.'],
+                     binaries=[],
+                     datas=[('requirements.txt', '.')],
+                     hiddenimports=['requests', 'pandas', 'dotenv', 'tabulate'],
+                     hookspath=[],
+                     hooksconfig={},
+                     runtime_hooks=[],
+                     excludes=[],
+                     win_no_prefer_redirects=False,
+                     win_private_assemblies=False,
+                     cipher=block_cipher,
+                     noarchive=False)
+        pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+        exe = EXE(pyz,
+                  a.scripts,
+                  a.binaries,
+                  a.zipfiles,
+                  a.datas,  
+                  [],
+                  name='${{ matrix.output_name }}',
+                  debug=False,
+                  bootloader_ignore_signals=False,
+                  strip=False,
+                  upx=True,
+                  upx_exclude=[],
+                  runtime_tmpdir=None,
+                  console=True,
+                  disable_windowed_traceback=False,
+                  target_arch=None,
+                  codesign_identity=None,
+                  entitlements_file=None )
+        " > transaction_analysis.spec
 
     - name: Build binary
-      run: pyinstaller --onefile transaction_analysis.py --name ${{ matrix.output_name }}
+      run: pyinstaller transaction_analysis.spec
 
     - name: Upload artifact
       uses: actions/upload-artifact@v2
@@ -63,12 +106,10 @@ jobs:
           const fs = require('fs').promises;
           const { repo: { owner, repo }, sha } = context;
           
-          // Determine release name and tag
           const isTagPush = context.ref.startsWith('refs/tags/');
           const tagName = isTagPush ? context.ref.replace('refs/tags/', '') : `release-${sha.slice(0, 7)}`;
           const releaseName = context.payload.inputs ? context.payload.inputs.release_name : `Release ${tagName}`;
           
-          // Create release
           const release = await github.rest.repos.createRelease({
             owner,
             repo,
@@ -78,7 +119,6 @@ jobs:
             prerelease: false
           });
           
-          // Upload assets
           const assets = ['transaction_analysis_linux', 'transaction_analysis_windows.exe'];
           for (const asset of assets) {
             const filePath = `./${asset}/${asset}`;
