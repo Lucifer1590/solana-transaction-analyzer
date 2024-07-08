@@ -49,20 +49,40 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
     - name: Download artifacts
       uses: actions/download-artifact@v2
 
     - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: actions/github-script@v6
       with:
-        tag_name: ${{ github.ref_name }}
-        release_name: ${{ github.event.inputs.release_name || format('Release {0}', github.ref_name) }}
-        draft: false
-        prerelease: false
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          const fs = require('fs').promises;
+          const { repo: { owner, repo }, sha } = context;
+          
+          const release = await github.rest.repos.createRelease({
+            owner,
+            repo,
+            tag_name: context.ref.startsWith('refs/tags/') ? context.ref.replace('refs/tags/', '') : `release-${sha.slice(0, 7)}`,
+            name: context.payload.inputs ? context.payload.inputs.release_name : `Release ${context.ref.replace('refs/tags/', '')}`,
+            draft: false,
+            prerelease: false
+          });
+          
+          const assets = ['transaction_analysis_linux', 'transaction_analysis_windows.exe'];
+          for (const asset of assets) {
+            const file = await fs.readFile(`./${asset}/${asset}`);
+            await github.rest.repos.uploadReleaseAsset({
+              owner,
+              repo,
+              release_id: release.data.id,
+              name: asset,
+              data: file
+            });
+          }
 
     - name: Upload Release Assets (Linux)
       uses: actions/upload-release-asset@v1
