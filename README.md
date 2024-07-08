@@ -68,7 +68,7 @@ Analyzing 1525 transactions...
 ## Configuration
 
 1. Create a `.env` file in the root directory of the project with the following content:
-   or edit the provided one
+   or edit the provided one from env.example to .env
 
    ```
    #DONT CHANGE THIS
