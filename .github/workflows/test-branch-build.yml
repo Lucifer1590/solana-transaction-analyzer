@@ -26,6 +26,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        ref: test  # Explicitly checkout the test branch
     
     - name: Set up Python 3.9
       uses: actions/setup-python@v2
@@ -95,6 +97,10 @@ jobs:
     permissions:
       contents: write
     steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: test  # Explicitly checkout the test branch
+
     - name: Download artifacts
       uses: actions/download-artifact@v2
 
@@ -106,7 +112,13 @@ jobs:
           const fs = require('fs').promises;
           const { repo: { owner, repo }, sha } = context;
           
-          const tagName = `test-${sha.slice(0, 7)}`;
+          const testBranchSha = await github.rest.git.getRef({
+            owner,
+            repo,
+            ref: 'heads/test'
+          }).then(res => res.data.object.sha);
+          
+          const tagName = `test-${testBranchSha.slice(0, 7)}`;
           const defaultReleaseName = `Test Branch Pre-Release ${tagName}`;
           const releaseName = context.payload.inputs && context.payload.inputs.release_name 
                                ? context.payload.inputs.release_name 
