@@ -1,0 +1,139 @@
+name: Test Branch Build and Pre-Release
+
+on:
+  push:
+    branches:
+      - test
+  workflow_dispatch:
+    inputs:
+      release_name:
+        description: 'Name of the pre-release (leave blank for auto-generated name)'
+        required: false
+        default: ''
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            output_name: transaction_analysis_linux_test
+          - os: windows-latest
+            output_name: transaction_analysis_windows_test.exe
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        pip install requests pandas python-dotenv tabulate prettytable
+        pip freeze > requirements.txt
+
+    - name: Create spec file
+      run: |
+        echo "# -*- mode: python ; coding: utf-8 -*-
+
+        block_cipher = None
+
+        a = Analysis(['transaction_analysis.py'],
+                     pathex=['.'],
+                     binaries=[],
+                     datas=[('requirements.txt', '.')],
+                     hiddenimports=['requests', 'pandas', 'dotenv', 'tabulate', 'prettytable'],
+                     hookspath=[],
+                     hooksconfig={},
+                     runtime_hooks=[],
+                     excludes=[],
+                     win_no_prefer_redirects=False,
+                     win_private_assemblies=False,
+                     cipher=block_cipher,
+                     noarchive=False)
+        pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+        exe = EXE(pyz,
+                  a.scripts,
+                  a.binaries,
+                  a.zipfiles,
+                  a.datas,  
+                  [],
+                  name='${{ matrix.output_name }}',
+                  debug=False,
+                  bootloader_ignore_signals=False,
+                  strip=False,
+                  upx=True,
+                  upx_exclude=[],
+                  runtime_tmpdir=None,
+                  console=True,
+                  disable_windowed_traceback=False,
+                  target_arch=None,
+                  codesign_identity=None,
+                  entitlements_file=None )
+        " > transaction_analysis.spec
+
+    - name: Build binary
+      run: pyinstaller transaction_analysis.spec
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ matrix.output_name }}
+        path: dist/${{ matrix.output_name }}*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v2
+
+    - name: Create Pre-Release and Upload Assets
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          const fs = require('fs').promises;
+          const { repo: { owner, repo }, sha } = context;
+          
+          const tagName = `test-${sha.slice(0, 7)}`;
+          const defaultReleaseName = `Test Branch Pre-Release ${tagName}`;
+          const releaseName = context.payload.inputs && context.payload.inputs.release_name 
+                               ? context.payload.inputs.release_name 
+                               : defaultReleaseName;
+          
+          const release = await github.rest.repos.createRelease({
+            owner,
+            repo,
+            tag_name: tagName,
+            name: releaseName,
+            draft: false,
+            prerelease: true,  // Mark as pre-release
+            target_commitish: 'test'  // Specify the test branch
+          });
+          
+          const assets = ['transaction_analysis_linux_test', 'transaction_analysis_windows_test.exe'];
+          for (const asset of assets) {
+            const filePath = `./${asset}/${asset}`;
+            const fileContent = await fs.readFile(filePath);
+            await github.rest.repos.uploadReleaseAsset({
+              owner,
+              repo,
+              release_id: release.data.id,
+              name: asset,
+              data: fileContent
+            });
+            console.log(`Uploaded ${asset} to pre-release ${release.data.id}`);
+          }
+          
+          console.log(`Created pre-release ${release.data.id} with name "${releaseName}" and tag "${tagName}"`)
