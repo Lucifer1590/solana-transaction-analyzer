@@ -2,3 +2,4 @@ requests
 pandas
 python-dotenv
 tabulate
+prettytable
