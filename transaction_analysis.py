@@ -21,6 +21,7 @@ ACCOUNT = os.getenv('ACCOUNT')
 API_KEY = os.getenv('API_KEY')
 DEBUG = os.getenv('DEBUG', 'false').lower() == 'true'
 CSV_ANALYSIS = os.getenv('CSV_ANALYSIS', 'true').lower() != 'false'  # True by default
+USE_CURRENT_TIME = os.getenv('USE_CURRENT_TIME', 'false').lower() == 'true'
 
 
 CSV_HEADERS = ["Timestamp (UTC)", "Slot", "Status", "Fee", "Compute Unit", "Token Name", "Token In", "Profit", "Memo", "Signature"]
@@ -79,14 +80,20 @@ def get_latest_transaction_signature(api_url, network, account):
     return None, None
 
 def fetch_and_parse_transactions(api_url, network, account, time_delta):
-    latest_signature, latest_block_time = get_latest_transaction_signature(api_url, network, account)
-    if not latest_signature:
-        logger.error("Failed to fetch the latest transaction.")
-        return []
+    if USE_CURRENT_TIME:
+        end_time = datetime.now()
+        start_time = end_time - time_delta
+        logger.debug(f"Using current time. Time range: {start_time} to {end_time}")
+        latest_signature, _ = get_latest_transaction_signature(api_url, network, account)
+    else:
+        latest_signature, latest_block_time = get_latest_transaction_signature(api_url, network, account)
+        if not latest_signature:
+            logger.error("Failed to fetch the latest transaction.")
+            return []
 
-    end_time = datetime.fromtimestamp(latest_block_time)
-    start_time = end_time - time_delta if time_delta else datetime.min
-    logger.debug(f"Fetching transactions from {start_time} to {end_time}")
+        end_time = datetime.fromtimestamp(latest_block_time)
+        start_time = end_time - time_delta if time_delta else datetime.min
+        logger.debug(f"Using latest transaction time. Time range: {start_time} to {end_time}")
 
     transactions = []
     before_tx_signature = latest_signature
@@ -119,9 +126,6 @@ def fetch_and_parse_transactions(api_url, network, account, time_delta):
 
         logger.debug(f"Fetched {len(batch)} transactions in this batch")
 
-        batch_start_time = datetime.fromtimestamp(batch[-1]["raw"]["blockTime"])
-        batch_end_time = datetime.fromtimestamp(batch[0]["raw"]["blockTime"])
-
         for tx in batch:
             tx_time = datetime.fromtimestamp(tx["raw"]["blockTime"])
             if start_time <= tx_time <= end_time:
@@ -136,7 +140,7 @@ def fetch_and_parse_transactions(api_url, network, account, time_delta):
             break
 
         # Update progress
-        progress_msg = f"\rAPI calls: {api_calls}, Parsed transactions from {batch_start_time} to {batch_end_time}"
+        progress_msg = f"\rAPI calls: {api_calls}, Parsed transactions from {datetime.fromtimestamp(batch[-1]['raw']['blockTime'])} to {datetime.fromtimestamp(batch[0]['raw']['blockTime'])}"
         sys.stdout.write(progress_msg)
         sys.stdout.flush()
 
@@ -362,6 +366,7 @@ def main():
     display_ascii_art()
     account = get_account()
     logger.info(f"Analysis for account: {account}")
+    logger.info(f"Using current time for calculations: {USE_CURRENT_TIME}")
 
     while True:
         print("\n PLEASE CONSIDER DONATING (SOL)- uGGim2n46EhwfU5X6eUB6rWQCmm3zJdpmLG7ZbHuisS ")        
@@ -371,16 +376,17 @@ def main():
         print("3. 20 minutes")
         print("4. 30 minutes")
         print("5. 1 hour")
-        print("6. 6 hours")  # New option
-        print("7. 12 hours")
-        print("8. 24 hours")
-        print("9. 48 hours")
-        print("10. 7 days")
-        print("11. Exit")  # Changed from 10 to 11
+        print("6. 3 hours")  # New option
+        print("7. 6 hours")
+        print("8. 12 hours")
+        print("9. 24 hours")
+        print("10. 48 hours")
+        print("11. 7 days")
+        print("12. Exit")
 
-        choice = input("Enter your choice (1-11): ")  # Updated to 1-11
+        choice = input("Enter your choice (1-12): ")
 
-        if choice == '11':  # Updated to 11
+        if choice == '12':
             logger.info("Exiting the program")
             print("Exiting the program. Goodbye!")
             break
@@ -391,11 +397,12 @@ def main():
             '3': timedelta(minutes=20),
             '4': timedelta(minutes=30),
             '5': timedelta(hours=1),
-            '6': timedelta(hours=6),  # New option
-            '7': timedelta(hours=12),
-            '8': timedelta(hours=24),
-            '9': timedelta(hours=48),
-            '10': timedelta(days=7)  # 7 days
+            '6': timedelta(hours=3),  # New option
+            '7': timedelta(hours=6),
+            '8': timedelta(hours=12),
+            '9': timedelta(hours=24),
+            '10': timedelta(hours=48),
+            '11': timedelta(days=7)
         }
 
         if choice not in time_ranges:

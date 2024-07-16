@@ -1,3 +1,18 @@
 add 6 hr 
 add logs to save the extracted data in sane filename as csv 
 Cleared Some INFO logging 
+
+--------- Tuesday, July 16, 2024 5:44:37 PM-------------
+
+What's New:
+
+1. Time Calculation Option
+   - New setting: Use current time for calculations
+   - When enabled, time ranges start from the current moment
+   - When disabled (default), time ranges start from the latest transaction
+
+2. New Time Range Option
+   - Added a 3-hour option to the menu
+   - You can now analyze transactions from the last 3 hours
+
+Note: These updates give you more flexibility in choosing how and when to analyze your transactions.
