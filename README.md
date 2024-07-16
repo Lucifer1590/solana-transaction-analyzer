@@ -104,6 +104,10 @@ After installation, follow these steps to configure the analyzer:
    API_KEY=your_api_key_here
    #FOR ADDITIONAL DEBUGGING
    DEBUG=false
+   
+   CSV_ANALYSIS=true
+
+   USE_CURRENT_TIME=true
    ```
 
 2. Replace `your_api_key_here` with your actual Shyft API key.
