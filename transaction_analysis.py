@@ -24,6 +24,7 @@ CSV_ANALYSIS = os.getenv('CSV_ANALYSIS', 'true').lower() != 'false'  # True by d
 USE_CURRENT_TIME = os.getenv('USE_CURRENT_TIME', 'false').lower() == 'true'
 
 
+
 CSV_HEADERS = ["Timestamp (UTC)", "Slot", "Status", "Fee", "Compute Unit", "Token Name", "Token In", "Profit", "Memo", "Signature"]
 
 # Create 'csv' and 'logs' folders if they don't exist
